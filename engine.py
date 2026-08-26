@@ -7,14 +7,18 @@ def init_words_weights(vocab_size, word_representor_size):
     # more dimension for a word means a higher sum up result, we apply a division to regulate this case
     return word_weights
 
-def word_embedding(word_weights, one_hot_vector, word_activation_func):
-    return word_activation_func(one_hot_vector @ word_weights), word_weights
+def word_embedding(word_weights, input_seq, word_activation_func): # input_seq : 00000010000,0010000000................
+    word_embedded_seq = []
+    for one_hot_vector in input_seq:
+        word_embedded_seq.append(word_activation_func(one_hot_vector @ word_weights))
+    return np.array(word_embedded_seq)
 
 
-def positional_encoding(word_representor_size, word_embedded_seq):
-    seq_len = len(word_embedded_seq)
-    PE = np.zeros((seq_len, word_representor_size))
     
+def positional_encoding(word_embedded_seq):
+    seq_len, word_representor_size = word_embedded_seq.shape
+    PE = np.zeros((seq_len, word_representor_size))
+
     # Each dimension i gets a different wave frequency:
     #   low i  -> divisor near 1    -> fast-changing angle -> rapid oscillation across positions
     #   high i -> divisor near 10000 -> slow-changing angle -> near-flat across positions
@@ -22,12 +26,11 @@ def positional_encoding(word_representor_size, word_embedded_seq):
     # just phase-shifted 90 degrees (sin vs cos), giving each position a unique signature
     
     for pos in range(seq_len):
-            for i in range(word_representor_size):
-                # standart paper formules as PE functions
-                if i % 2 == 0:
-                    PE[pos, i] = np.sin(pos / (10000 ** (i / word_representor_size)))
-                else:
-                    PE[pos, i] = np.cos(pos / (10000 ** ((i - 1) / word_representor_size)))
+        for i in range(word_representor_size):
+            if i % 2 == 0:
+                PE[pos, i] = np.sin(pos / (10000 ** (i / word_representor_size)))
+            else:
+                PE[pos, i] = np.cos(pos / (10000 ** ((i - 1) / word_representor_size)))
     return word_embedded_seq + PE
 
 # to calculate the dot product of the input sequence and the weights, which is used to project the input sequence into a different space (key, query, or value)
@@ -73,10 +76,10 @@ def residual_connection(input_seq, output_seq):
 
 
     
-def pipe_layer(input_seq, key_weights, value_weights, query_weights, word_activation_func , attention_activation_func):
+def pipe_layer(one_hot_vector, word_weights, key_weights, value_weights, query_weights, word_activation_func , attention_activation_func):
     
     # Step 1: Word Embedding
-    word_embedded_seq, word_embedded_weights = word_embedding(input_seq.shape[0], word_embedded_seq.shape[1], word_activation_func)
+    word_embedded_seq = word_embedding(word_weights, one_hot_vector, word_activation_func)
     
     # Step 2: Positional Encoding
     pos_encoded_seq = positional_encoding(word_embedded_seq.shape[1], word_embedded_seq)
@@ -88,7 +91,7 @@ def pipe_layer(input_seq, key_weights, value_weights, query_weights, word_activa
     output_seq = residual_connection(pos_encoded_seq, attention_output)
     
     pipe_cache = {
-        'word_embedded_weights': word_embedded_weights,
+        'word_embedded_weights': word_weights,
         'pos_encoded_seq': pos_encoded_seq,
         'attention_cache': attention_cache,
         'output_seq': output_seq
