@@ -54,37 +54,32 @@ def project(seq, weights):
 
 
 # we use this func for both self-atteniton and cross-attention ,its why we need weight parameters
-def attention(input_seq, key_weights, value_weights, query_weights, attention_activation_func):
+def attention(query_input, kv_input, key_w, value_w, query_w, attention_activation_func):
     
-    # word_embedded_seq shape: (seq_len, word_representor_size)
-    seq_len, word_representor_size = input_seq.shape
-    
-    #weights for key, query and value matrices, initialized with random values
-    # key_weights = np.random.randn(seq_len, word_representor_size) * (1 / np.sqrt(word_representor_size))
-    # query_weights = np.random.randn(seq_len, word_representor_size) * (1 / np.sqrt(word_representor_size))
-    # value_weights = np.random.randn(seq_len, word_representor_size) * (1 / np.sqrt(word_representor_size))
+    # query_input: query'nin geldiği sequence (self-attn'de = kv_input, cross-attn'de decoder)
+    # kv_input: key/value'nin geldiği sequence (self-attn'de = query_input, cross-attn'de encoder_output)
+    word_representor_size = query_input.shape[-1]
     
     #values for key, query and value matrices
-    keys = project(input_seq, key_weights)
-    queries = project(input_seq, query_weights)
-    values = project(input_seq, value_weights)
+    keys = project(kv_input, key_w)
+    queries = project(query_input, query_w)
+    values = project(kv_input, value_w)
     
     #calculate attention scores
-    attention_scores = np.dot(queries, keys.T) / np.sqrt(word_representor_size)
+    scores = np.dot(queries, keys.T) / np.sqrt(word_representor_size)
     
     #apply softmax to get attention weights
-    attention_weights = attention_activation_func(attention_scores)
-    attention_outputs = np.dot(attention_weights, values),
-    attention_cache = {
-        'input_seq': input_seq,
-        'key_weights': key_weights, 'query_weights': query_weights, 'value_weights': value_weights,
+    weights = attention_activation_func(scores)
+    outputs = np.dot(weights, values) 
+    cache = {
+        'query_input': query_input, 'kv_input': kv_input,
+        'key_weights': key_w, 'query_weights': query_w, 'value_weights': value_w,
         'keys': keys, 'queries': queries, 'values': values,
-        'attention_weights': attention_weights,
-        'attention_outputs': attention_outputs
+        'weights': weights,
+        'outputs': outputs
     }
     
-    return attention_outputs, attention_cache
-    # return attention_output, attention_cache
+    return outputs, cache
 
 
 
