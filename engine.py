@@ -8,7 +8,7 @@ def init_words_weights(vocab_size, word_representor_size):
     return word_weights
 
 def word_embedding(word_weights, one_hot_vector, word_activation_func):
-    return word_activation_func(one_hot_vector @ word_weights)
+    return word_activation_func(one_hot_vector @ word_weights), word_weights
 
 
 def positional_encoding(word_representor_size, word_embedded_seq):
@@ -76,7 +76,7 @@ def residual_connection(input_seq, output_seq):
 def pipe_layer(input_seq, key_weights, value_weights, query_weights, word_activation_func , attention_activation_func):
     
     # Step 1: Word Embedding
-    word_embedded_seq, word_embedded_weights = word_embedding(input_seq.shape[0], word_embedded_seq.shape[1], word_activation_func, word_representor_size=2)
+    word_embedded_seq, word_embedded_weights = word_embedding(input_seq.shape[0], word_embedded_seq.shape[1], word_activation_func)
     
     # Step 2: Positional Encoding
     pos_encoded_seq = positional_encoding(word_embedded_seq.shape[1], word_embedded_seq)
