@@ -1,18 +1,27 @@
 
 import numpy as np
 
-
+# init weights functions
 def init_words_weights(vocab_size, word_representor_size):
     word_weights = np.random.randn(vocab_size, word_representor_size) * (1 / np.sqrt(word_representor_size)) # create weight matrix for all input_words
     # more dimension for a word means a higher sum up result, we apply a division to regulate this case
     return word_weights
 
+def init_qkv_weights()
+
+
+
+
+
+
+
+# pipeline functions
 def word_embedding(word_weights, input_seq, word_activation_func): # input_seq : 00000010000,0010000000................
     word_embedded_seq = []
     for one_hot_vector in input_seq:
         word_embedded_seq.append(word_activation_func(one_hot_vector @ word_weights))
     return np.array(word_embedded_seq)
-
+    # input_seq_len x word_representor_size
 
     
 def positional_encoding(word_embedded_seq):
@@ -32,6 +41,8 @@ def positional_encoding(word_embedded_seq):
             else:
                 PE[pos, i] = np.cos(pos / (10000 ** ((i - 1) / word_representor_size)))
     return word_embedded_seq + PE
+    # input_seq_len x word_representor_size
+
 
 # to calculate the dot product of the input sequence and the weights, which is used to project the input sequence into a different space (key, query, or value)
 def project(seq, weights):
