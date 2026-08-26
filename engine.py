@@ -7,7 +7,11 @@ def init_words_weights(vocab_size, word_representor_size):
     # more dimension for a word means a higher sum up result, we apply a division to regulate this case
     return word_weights
 
-def init_qkv_weights()
+def init_qkv_weights(word_representor_size):
+    W_Q = np.random.randn(word_representor_size, word_representor_size) * (1 / np.sqrt(word_representor_size))
+    W_K = np.random.randn(word_representor_size, word_representor_size) * (1 / np.sqrt(word_representor_size))
+    W_V = np.random.randn(word_representor_size, word_representor_size) * (1 / np.sqrt(word_representor_size))
+    return W_Q, W_K, W_V
 
 
 
@@ -50,10 +54,10 @@ def project(seq, weights):
 
 
 # we use this func for both self-atteniton and cross-attention ,its why we need weight parameters
-def attention(seq, key_weights, value_weights, query_weights, attention_activation_func):
+def attention(input_seq, key_weights, value_weights, query_weights, attention_activation_func):
     
     # word_embedded_seq shape: (seq_len, word_representor_size)
-    seq_len, word_representor_size = seq.shape
+    seq_len, word_representor_size = input_seq.shape
     
     #weights for key, query and value matrices, initialized with random values
     # key_weights = np.random.randn(seq_len, word_representor_size) * (1 / np.sqrt(word_representor_size))
@@ -61,23 +65,25 @@ def attention(seq, key_weights, value_weights, query_weights, attention_activati
     # value_weights = np.random.randn(seq_len, word_representor_size) * (1 / np.sqrt(word_representor_size))
     
     #values for key, query and value matrices
-    keys = project(seq, key_weights)
-    queries = project(seq, query_weights)
-    values = project(seq, value_weights)
+    keys = project(input_seq, key_weights)
+    queries = project(input_seq, query_weights)
+    values = project(input_seq, value_weights)
     
     #calculate attention scores
     attention_scores = np.dot(queries, keys.T) / np.sqrt(word_representor_size)
     
     #apply softmax to get attention weights
     attention_weights = attention_activation_func(attention_scores)
+    attention_outputs = np.dot(attention_weights, values),
     attention_cache = {
-        'seq': seq,
+        'input_seq': input_seq,
         'key_weights': key_weights, 'query_weights': query_weights, 'value_weights': value_weights,
         'keys': keys, 'queries': queries, 'values': values,
-        'attention_weights': attention_weights
+        'attention_weights': attention_weights,
+        'attention_outputs': attention_outputs
     }
     
-    return np.dot(attention_weights, values), attention_cache
+    return attention_outputs, attention_cache
     # return attention_output, attention_cache
 
 
