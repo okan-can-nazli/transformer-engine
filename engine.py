@@ -62,7 +62,6 @@ def project(seq, weights):
     return np.dot(seq, weights)
 
 
-# NEW: builds a causal (look-ahead) mask so position i can only attend to positions <= i.
 # shape: (seq_len, seq_len), 0 where allowed, -inf where forbidden (added to scores before softmax)
 def causal_mask(seq_len):
     mask = np.triu(np.ones((seq_len, seq_len)), k=1) # upper triangle above diagonal = future positions
