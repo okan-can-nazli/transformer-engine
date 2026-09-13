@@ -35,9 +35,11 @@ This builds a vocab for a source and target sentence, runs them through the full
 - Residual connections + LayerNorm around every sub-layer
 - Position-wise feed-forward network
 - Final linear + softmax output layer
+- Forward-pass caching: every layer function returns `(output, cache)`, where `cache` holds every intermediate value needed for backprop (Q/K/V, attention scores/probabilities, LayerNorm mean/var, pre/post-ReLU activations, residual inputs)
 
 ## Not yet implemented
 
-- Backpropagation / training loop
+- Backpropagation (the cache values are there, the gradient math is not yet)
+- Optimizer / training loop
 - Batching (currently single-sequence only)
 

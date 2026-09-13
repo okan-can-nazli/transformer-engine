@@ -8,6 +8,7 @@ def softmax(x):
 
 # main brain of the attention formula
 # self-attention phase in my notes but its better to name it based on what it does not where its used
+# returns (out, cache) - cache holds everything needed later for backprop
 def scaled_dot_product_attention(q, k, v, mask=None):
 
     # we may indeed use k or v
@@ -31,8 +32,12 @@ def scaled_dot_product_attention(q, k, v, mask=None):
     if mask is not None:
         scores += mask
 
-    return softmax(scores) @ v #softmax(scores) : probabilty [0,1]
+    probs = softmax(scores) #softmax(scores) : probabilty [0,1]
+    out = probs @ v
     # apply transpose to provide inner match in dot product operation
+
+    cache = {"q": q, "k": k, "v": v, "scores": scores, "probs": probs, "out": out}
+    return out, cache
 
 def init_multihead_weights(d_model, h): # h : number of heads
     d_k = d_model // h
@@ -50,17 +55,30 @@ def init_multihead_weights(d_model, h): # h : number of heads
 
 
 # provides self-attention operation in a parallel small way
+# returns (out, cache) - cache holds inputs, per-head caches, and the concat (needed for backprop)
 def multi_head_attention(q_input, k_input, v_input, mha_weights, mask=None): # we split the input param x as k,v,q input param for cross validation on decoder
     head_outputs = []
+    head_caches = []
+
     for head in mha_weights["heads"]:
         # matrix smaller
         q = q_input @ head["W_Q"]
         k = k_input @ head["W_K"]
         v = v_input @ head["W_V"]
-        head_outputs.append(scaled_dot_product_attention(q, k, v, mask))  # seq_len x d_k!!!!
+
+        head_out, head_cache = scaled_dot_product_attention(q, k, v, mask)  # seq_len x d_k!!!!
+        head_outputs.append(head_out)
+        head_caches.append(head_cache)
 
     concat = np.concatenate(head_outputs, axis=-1)  # seq_len x d_model : put all small matrixes together
-    return concat @ mha_weights["W_O"]  # seq_len x d_model : use another weight to dont make them fully independent, create a relation
+    out = concat @ mha_weights["W_O"]  # seq_len x d_model : use another weight to dont make them fully independent, create a relation
+
+    cache = {
+        "q_input": q_input, "k_input": k_input, "v_input": v_input,
+        "head_caches": head_caches,  # one dict per head (q,k,v,scores,probs,out)
+        "concat": concat, "out": out,
+    }
+    return out, cache
 
 
 def get_causal_mask(seq_len):
